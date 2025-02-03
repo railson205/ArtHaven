@@ -4,11 +4,13 @@ import Header from "@/public/components/headerbar";
 import ListaMercado from "@/public/components/lista_mercado";
 import Midias from "@/public/components/lista_midias";
 import RedeSocial from "@/public/components/redes_sociais";
+import { perfilSalvo, url_api, usuario_logado } from "@/public/constantes";
 import Avaliacao from "@/public/icons/avaliacao";
 import Preco from "@/public/icons/preco";
 import Rapido from "@/public/icons/rapido";
+import { PerfilInterface, RedeSocialInterface } from "@/public/interfaces";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaEllipsisV } from "react-icons/fa";
 
 // Componentes que você deseja exibir para cada botão
@@ -16,10 +18,39 @@ const Curtidas = () => <div>Conteúdo de Curtidas</div>;
 const Comunidade = () => <div>Conteúdo de Comunidade</div>;
 
 export default function Perfil() {
+  const [perfilInfo, setPerfilInfo] = useState<PerfilInterface>(perfilSalvo);
   const [selected, setSelected] = useState<string>("Mídias");
   const handleClick = (buttonName: string) => {
     setSelected(buttonName); // Atualiza o estado para o botão selecionado
   };
+  const [data_resp, setData] = useState();
+
+  useEffect(() => {
+    async function fetchPerfil() {
+      try {
+        const resp = await fetch(
+          url_api + "perfilMercado/?nameTag=" + usuario_logado
+        );
+        const data = await resp.json();
+        const perfil: PerfilInterface = {
+          id_perfil: data.perfil[0].id_perfil,
+          nome: data.perfil[0].nome,
+          nameTag: data.perfil[0].nameTag,
+          estrelas: data.perfil[0].estrelas,
+          tags: [1, 2],
+          descricao: data.perfil[0].descricao,
+          //Modificar
+          foto: perfilSalvo.foto,
+          //foto:data.perfil[0].foto,
+          redes_sociais: perfilSalvo.redes_sociais,
+        };
+        setPerfilInfo(perfil);
+      } catch (error) {
+        console.error("Erro na busca", error);
+      }
+    }
+    fetchPerfil();
+  }, []);
 
   // Função para renderizar o componente correspondente
   const renderComponent = () => {
@@ -49,7 +80,7 @@ export default function Perfil() {
         <div className="relative w-64 h-64">
           {/* w-64 e h-64 criam um quadrado */}
           <Image
-            src="/assets/foto_perfil.jpg"
+            src={perfilInfo.foto}
             alt="Foto de perfil"
             layout="fill" // A imagem vai ocupar 100% da área da div
             objectFit="cover" // A imagem vai cobrir toda a área da div, cortando o excesso para manter a proporção
@@ -58,13 +89,15 @@ export default function Perfil() {
         </div>
         <div className="flex justify-start w-full md:w-[60%] lg:w-[50%] px-6 sm:px-12">
           <div className="flex flex-col w-full">
-            <p className="text-black text-lg sm:text-xl">Louis Laurent</p>
-            <p className="text-black text-sm sm:text-base pt-2">@LouisLrnt</p>
+            <p className="text-black text-lg sm:text-xl">{perfilInfo.nome}</p>
+            <p className="text-black text-sm sm:text-base pt-2">
+              {perfilInfo.nameTag}
+            </p>
 
             <div className="flex flex-row pt-4 gap-4">
-              <Avaliacao />
-              <Preco />
-              <Rapido />
+              <Avaliacao avaliacao={perfilInfo.estrelas} />
+              {perfilInfo.tags[0] == 1 && <Preco />}
+              {perfilInfo.tags[1] == 2 && <Rapido />}
             </div>
 
             <div className="flex flex-row pt-4 gap-2">
@@ -80,34 +113,24 @@ export default function Perfil() {
 
         <div className="h-full w-full p-4 overflow-auto">
           <p className="text-3xl text-black break-words">
-            Hello! I'm a Concept Artist and Art Director open for new
-            opportunities! Instructor at Learnsquared, you can get my first
-            course, Dynamic Concept Art I. Here:{" "}
-            <a
-              href="https://www.learnsquared.com/courses/dynamic-concept-art-i"
-              className="text-blue-700 underline"
-            >
-              https://www.learnsquared.com/courses/dynamic-concept-art-i
-            </a>
-            Contact:{" "}
-            <span className="text-blue-700">laurent.louis16@icloud.com</span>
+            {perfilInfo.descricao}
           </p>
         </div>
       </div>
 
       {/* Terceira div */}
       <div className="flex-1 bg-white border border-solid border-black p-4 flex flex-row">
-        <RedeSocial src="/assets/x-logo.png" alt="Logo x" nome="@LouisLrnt" />
-        <RedeSocial
-          src="/assets/instagram-logo.webp"
-          alt="Logo instagram"
-          nome="louislrnt_"
-        />
-        <RedeSocial
-          src="/assets/artstation-logo.webp"
-          alt="Logo artstation"
-          nome="Louis Laurent"
-        />
+        {/*Modificar */}
+        {Object(perfilInfo.redes_sociais).map(
+          (rede_social: RedeSocialInterface, index: number) => (
+            <RedeSocial
+              key={index}
+              src={rede_social.imagem}
+              alt={rede_social.nome_imagem}
+              nametag={rede_social.nametag}
+            />
+          )
+        )}
       </div>
 
       {/* Quarta div */}

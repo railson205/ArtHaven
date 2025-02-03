@@ -93,19 +93,11 @@ export default function Header({ title }: HeaderProps) {
             <ShoppingCart size={24} />
           </button>
         </Link>
-        <button
-          style={{
-            padding: "0.25rem 0.75rem",
-            backgroundColor: "#e5e7eb",
-            borderRadius: "0.375rem",
-            color: "black",
-            fontSize: "0.875rem",
-          }}
-          aria-label="Entrar"
-        >
-          Entrar
-        </button>
-        <User size={24} style={{ color: "black" }} />
+        <Link href="/perfil">
+          <button className="p-4">
+            <User size={24} style={{ color: "black" }} />
+          </button>
+        </Link>
       </div>
     </header>
   );

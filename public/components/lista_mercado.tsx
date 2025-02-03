@@ -1,17 +1,53 @@
 import Image from "next/image";
 import { ShoppingCart, DollarSign } from "lucide-react";
-import produtos from "../produtos";
+import { itensSalvosMercado, url_api, usuario_logado } from "../constantes";
+import { ItensMercadoInterface } from "../interfaces";
+import { useEffect, useState } from "react";
 
-export default function ListaProdutos() {
+export default function ListaitensMercado() {
+  const [itensMercado, setItensMercado] =
+    useState<ItensMercadoInterface[]>(itensSalvosMercado);
+
+  useEffect(() => {
+    async function fetchMercado() {
+      try {
+        const resp = await fetch(
+          url_api + "perfilMercado/?nameTag=" + usuario_logado
+        );
+        const data = await resp.json();
+        const produtosMercado: ItensMercadoInterface[] = [];
+        data.ItensMercado.map((itemLista: any, index: number) => {
+          const item: ItensMercadoInterface = {
+            id_item_mercado: itemLista.id_ItemMercado,
+            nome: itemLista.nome,
+            descricao: itemLista.descricao,
+            preco: `R$ ${itemLista.preco.toFixed(2).replace(".", ",")}`,
+            //Modificar
+            imagem: itensSalvosMercado[index].imagem,
+            //imagem:itemLista.foto,
+            tipos_de_cor: itemLista.tiposCor,
+            tipos_de_fundo: itemLista.tiposFundo,
+            id_perfil: itemLista.perfil,
+          };
+          produtosMercado.push(item);
+        });
+        setItensMercado(produtosMercado);
+      } catch (error) {
+        console.error("Erro na busca", error);
+      }
+    }
+    fetchMercado();
+  }, []);
+
   return (
     <div className="flex flex-col gap-4 p-4">
       <p style={{ color: "black", fontWeight: "bold" }}>
         Desenhos abaixo servem apenas de exemplos, ao solicitar vai ser
         referente a qualquer personagem.
       </p>
-      {Object.values(produtos).map((produto) => (
+      {Object.values(itensMercado).map((produto) => (
         <div
-          key={produto.id}
+          key={produto.id_item_mercado}
           className="flex items-center gap-6 p-4 border rounded-lg shadow-md bg-white"
         >
           {/* 1️⃣ Imagem do Produto */}
