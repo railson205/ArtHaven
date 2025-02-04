@@ -29,11 +29,13 @@ export default function Carrinho() {
     ProdutoCarrinhoInterface[]
   >([]);
 
+  const [teste, setTeste] = useState<ItensMercadoInterface[]>([]);
+
   const [editarOpen, setEditarOpen] = useState<boolean[]>(
     Array(produtosCarrinho.length).fill(false)
   );
-  const [texto, setTexto] = useState<string>("");
-  const [erro, setErro] = useState<string>("");
+  const [textos, setTextos] = useState<{ [key: number]: string }>({});
+  const [erros, setErros] = useState<{ [key: number]: string }>({});
 
   const atualizarAdicional = (index: number, tipo: string, valor: string) => {
     setProdutosCarrinho((prev) => {
@@ -46,16 +48,27 @@ export default function Carrinho() {
     });
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
-    setTexto(e.target.value);
+  const handleChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    setTextos((prev) => ({
+      ...prev,
+      [index]: e.target.value,
+    }));
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (index: number, e: React.FormEvent) => {
     e.preventDefault();
-    if (texto.trim().length === 0) {
-      setErro("O campo não pode estar vazio.");
+    if (!textos[index] || textos[index].trim().length === 0) {
+      setErros((prev) => ({
+        ...prev,
+        [index]: "O campo não pode estar vazio.",
+      }));
     } else {
-      setErro("");
-      console.log("Texto enviado:", texto);
+      setErros((prev) => ({ ...prev, [index]: "" }));
+      console.log(`Texto enviado para o produto ${index}:`, textos[index]);
+      handleSalvarDetalhes(index);
     }
   };
 
@@ -75,47 +88,105 @@ export default function Carrinho() {
     ]);
   };
 
-  useEffect(() => {
-    //Atualizar
-    async function fetchCarrinho() {
-      try {
-        const resp = await fetch(
-          url_api + "perfilCarrinho/?nameTag=" + usuario_logado,
-          {
-            cache: "no-store",
-          }
-        );
-        const data = await resp.json();
-        const itens: ProdutoCarrinhoInterface[] = [];
-        data.ItensCarrinhos.map((itemLista: any, index: number) => {
-          const itemMercado = produtosSalvoMercado.find((item) => {
-            console.log(item.id_item_mercado == itemLista.itensMercado);
-            return item.id_item_mercado == itemLista.itensMercado;
-          });
+  async function fetchMercado(): Promise<ItensMercadoInterface[]> {
+    try {
+      const response = await fetch(
+        `${url_api}perfilMercado?nameTag=${usuario_logado}`
+      );
+      const data = await response.json();
 
-          if (itemMercado) {
-            const itemCarrinho: ProdutoCarrinhoInterface = {
-              id_item_carrinho: itemLista.id_ItemCarrinho,
-              nome: itemMercado.nome,
-              descricao: itemMercado.descricao,
-              preco: itemMercado.preco,
-              imagem: itemMercado.imagem,
-              adicionalCor: itemLista.tipoCor.toString(),
-              //Modificar
-              adicionalPlanoDeFundo: "1",
-              //adicionalPlanoDeFundo: itemLista.tipoFundo,
-              tipos_de_cor: itemMercado.tipos_de_cor,
-              tipos_de_fundo: itemMercado.tipos_de_fundo,
-            };
-            itens.push(itemCarrinho);
-          }
-        });
-        setProdutosCarrinho([...itens]);
-      } catch (error) {
-        console.error("Erro na busca", error);
-      }
+      return data.ItensMercado.map((itemLista: any, index: number) => ({
+        id_item_mercado: itemLista.id_ItemMercado,
+        nome: itemLista.nome,
+        descricao: itemLista.descricao,
+        preco: `R$ ${itemLista.preco.toFixed(2).replace(".", ",")}`,
+        imagem:
+          `${url_api}${itemLista.foto}` || itensSalvosMercado[index]?.imagem,
+        tipos_de_cor: itemLista.tiposCor,
+        tipos_de_fundo: itemLista.tiposFundo,
+        id_perfil: itemLista.perfil,
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar mercado:", error);
+      return [];
     }
+  }
 
+  async function fetchCarrinho() {
+    try {
+      // Busca mercado e carrinho simultaneamente
+      const [produtosMercado, response] = await Promise.all([
+        fetchMercado(),
+        fetch(`${url_api}perfilCarrinho?nameTag=${usuario_logado}`, {
+          cache: "no-store",
+        }),
+      ]);
+
+      const data = await response.json();
+      const itensCarrinho: ProdutoCarrinhoInterface[] = data.ItensCarrinhos.map(
+        (itemLista: any) => {
+          const itemMercado = produtosMercado.find(
+            (item) => item.id_item_mercado === itemLista.itensMercado
+          );
+
+          if (!itemMercado) return null;
+
+          return {
+            id_item_carrinho: itemLista.id_ItemCarrinho,
+            nome: itemMercado.nome,
+            descricao: itemMercado.descricao,
+            preco: itemMercado.preco,
+            imagem: itemMercado.imagem,
+            detalhes: itemLista.detalhes,
+            adicionalCor: itemLista.tipoCor.toString(),
+            adicionalPlanoDeFundo: itemLista.tipoFundo,
+            tipos_de_cor: itemMercado.tipos_de_cor,
+            tipos_de_fundo: itemMercado.tipos_de_fundo,
+          };
+        }
+      ).filter(Boolean); // Remove valores `null`
+
+      setProdutosCarrinho(itensCarrinho);
+      // Inicializando o estado de textos com as descrições do carrinho
+      const textosIniciais = itensCarrinho.reduce((acc, item, index) => {
+        if (item) {
+          acc[index] = item.detalhes || "";
+        }
+        return acc;
+      }, {} as { [key: number]: string });
+
+      setTextos(textosIniciais);
+    } catch (error) {
+      console.error("Erro ao buscar carrinho:", error);
+    }
+  }
+
+  async function handleSalvarDetalhes(index: number) {
+    try {
+      const novo_detalhe = { detalhe: textos[index] };
+      const response = await fetch(
+        `${url_api}perfilCarrinho?nameTag=${usuario_logado}?id=${index}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(novo_detalhe),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar produto");
+      }
+
+      const data = await response.json();
+      console.log("Produto atualizado:", data);
+    } catch (error) {
+      console.log("Erro ao atualizar detalhes", error);
+    }
+  }
+
+  useEffect(() => {
     fetchCarrinho();
   }, []);
 
@@ -135,6 +206,7 @@ export default function Carrinho() {
                     layout="fill"
                     objectFit="cover"
                     className="rounded-md"
+                    unoptimized
                   />
                 </div>
                 <div className="flex flex-col flex-1">
@@ -168,20 +240,31 @@ export default function Carrinho() {
               {/* Formulário de Edição */}
               {editarOpen[index] && (
                 <div className="flex bg-gray-100">
-                  <form onSubmit={handleSubmit} className="p-6 max-w-lg">
+                  <form
+                    onSubmit={(e) => handleSubmit(index, e)}
+                    className="p-6 max-w-lg"
+                  >
                     <textarea
                       className="w-96 h-64 p-4 border rounded-md shadow-md resize-none"
                       rows={5}
-                      value={texto}
-                      onChange={handleChange}
+                      value={textos[index] || ""}
+                      onChange={(e) => handleChange(index, e)}
                       placeholder="Digite os detalhes da arte aqui..."
                     />
-                    {erro && <p className="text-red-500 mt-2">{erro}</p>}
+                    {erros[index] && (
+                      <p className="text-red-500 mt-2">{erros[index]}</p>
+                    )}
+                    <button
+                      type="submit"
+                      className="mt-2 px-4 py-2 bg-blue-700 text-white rounded-md"
+                    >
+                      Salvar Detalhes
+                    </button>
                   </form>
 
                   {/* Seção de Seleção de Cores e Fundos */}
                   <div>
-                    <div className="mb-4">
+                    <div className="mb-4 pr-5 pt-5">
                       <h3 className="text-lg font-semibold">Selecione a Cor</h3>
                       {Object.entries(produto.tipos_de_cor).map(
                         ([cor, valor]) => {

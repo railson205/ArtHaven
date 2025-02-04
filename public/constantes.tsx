@@ -1,10 +1,11 @@
+import RedeSocial from "./components/redes_sociais";
 import {
   ItensMercadoInterface,
   PerfilInterface,
   ProdutoCarrinhoInterface,
 } from "./interfaces";
 
-export const usuario_logado = "lucastag";
+export const usuario_logado = "LouisLrnt";
 export const url_api = "http://127.0.0.1:8000/";
 
 export const precoBaseCor = 50;
@@ -37,7 +38,7 @@ export const calcularTotal = (carrinho: ProdutoCarrinhoInterface[]): number => {
   }, 0);
 };
 
-export const perfilSalvo: PerfilInterface = {
+export const perfilSalvo = {
   id_perfil: "1",
   nome: "Louis Laurent",
   nameTag: "@LouisLrnt",
@@ -45,23 +46,33 @@ export const perfilSalvo: PerfilInterface = {
   tags: [1, 2],
   descricao: "descrição teste",
   foto: "/assets/foto_perfil.jpg",
-  redes_sociais: [
-    {
-      imagem: "/assets/x-logo.png",
-      nome_imagem: "Logo x",
-      nametag: "@LouisLrnt",
-    },
-    {
-      imagem: "/assets/instagram-logo.webp",
-      nome_imagem: "Logo instagram",
-      nametag: "louislrnt_",
-    },
-    {
-      imagem: "/assets/artstation-logo.webp",
-      nome_imagem: "Logo artstation",
-      nametag: "Louis Laurent",
-    },
-  ],
+  outrosSites: {},
+};
+
+const redes_sociais = {
+  x: {
+    imagem: "/assets/x-logo.png",
+    nome_imagem: "Logo x",
+  },
+  instagram: {
+    imagem: "/assets/instagram-logo.webp",
+    nome_imagem: "Logo instagram",
+  },
+};
+
+export const coleta_rede_social = (site: string, link: string, key: number) => {
+  const entry = Object.entries(redes_sociais).find(([key]) => key === site);
+  const { imagem = "", nome_imagem = "" } = entry ? entry[1] : {};
+  console.log();
+  const tag = link
+    .split("/")
+    .filter(
+      (item) => item && !item.includes("http") && !item.includes(".com")
+    )[0];
+  const nametag = tag ? `@${tag}` : "";
+  return (
+    <RedeSocial key={key} src={imagem} alt={nome_imagem} nametag={nametag} />
+  );
 };
 
 export const itensSalvosMercado: ItensMercadoInterface[] = [
@@ -71,16 +82,6 @@ export const itensSalvosMercado: ItensMercadoInterface[] = [
     descricao: "Desenho da cabeça.",
     preco: "R$ 99,90",
     imagem: "/assets/lista-mercado/produto1.jpeg",
-    tipos_de_cor: tiposDeCor,
-    tipos_de_fundo: tiposDePlanoDeFundo,
-    id_perfil: "1",
-  },
-  {
-    id_item_mercado: "2",
-    nome: "Bust",
-    descricao: "Desenho da cabeça, pescoço e tronco.",
-    preco: "R$ 149,90",
-    imagem: "/assets/lista-mercado/produto2.jpeg",
     tipos_de_cor: tiposDeCor,
     tipos_de_fundo: tiposDePlanoDeFundo,
     id_perfil: "1",
@@ -116,3 +117,38 @@ export const produtosSalvoMercado: ItensMercadoInterface[] = [
     id_perfil: "01944fb7-9f98-4bb9-ba3e-d62c441e4615",
   },
 ];
+
+export const transformarTexto = (texto: string) => {
+  const regex = /(https?:\/\/[^\s]+)|([\w.-]+@[a-zA-Z_-]+?\.[a-zA-Z]{2,6})/g;
+
+  return texto.split(regex).map((parte, index) => {
+    if (!parte) return null;
+
+    if (parte.startsWith("http")) {
+      return (
+        <a
+          key={index}
+          href={parte}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "#3b82f6", textDecoration: "underline" }}
+        >
+          {parte}
+        </a>
+      );
+    } else if (parte.includes("@")) {
+      return (
+        <a
+          key={index}
+          href={`mailto:${parte}`}
+          style={{ color: "#3b82f6", textDecoration: "underline" }}
+        >
+          {parte}
+        </a>
+      );
+    }
+    return <span key={index}>{parte}</span>;
+  });
+};
+
+export const cod_cupom = "DESCONTO10";

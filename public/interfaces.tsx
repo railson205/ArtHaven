@@ -6,13 +6,7 @@ export interface PerfilInterface {
   estrelas: number;
   tags: number[];
   descricao: string;
-  redes_sociais: RedeSocialInterface[];
-}
-
-export interface RedeSocialInterface {
-  imagem: string;
-  nome_imagem: string;
-  nametag: string;
+  outrosSites: Record<string, string>;
 }
 
 export interface ItensMercadoInterface {
@@ -32,6 +26,7 @@ export interface ProdutoCarrinhoInterface {
   descricao: string;
   preco: string;
   imagem: string;
+  detalhes: string;
   adicionalCor: string;
   adicionalPlanoDeFundo: string;
   tipos_de_cor: Record<string, number>;

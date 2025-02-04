@@ -4,16 +4,9 @@ import Divider from "@/public/components/divider";
 import Header from "@/public/components/headerbar";
 import {
   calcularTotal,
-  precoBaseCor,
-  precoBasePlanoDeFundo,
-  tiposDeCor,
-  tiposDePlanoDeFundo,
+  cod_cupom as cod_cupom_valido,
 } from "@/public/constantes";
-import {
-  ItensMercadoInterface,
-  ProdutoCarrinhoInterface,
-} from "@/public/interfaces";
-import { itensSalvosMercado } from "@/public/constantes";
+import { ProdutoCarrinhoInterface } from "@/public/interfaces";
 import { CreditCard } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -25,6 +18,18 @@ export default function FinalizarCompra() {
   const total = calcularTotal(carrinho);
   const [valorCupom, setValorCupom] = useState(0);
   const [valorDesconto, setValorDesconto] = useState(0);
+  const [codigoCupom, setCodigoCupom] = useState("");
+  const [mensagem, setMensagem] = useState("");
+
+  // Função para verificar o código do cupom e aplicar o desconto
+  const handleChangeCupom = () => {
+    if (codigoCupom === cod_cupom_valido) {
+      setValorCupom(10);
+      setValorDesconto(total * valorParticao + 10);
+      setMensagem("Código do cupom válido!");
+      setCodigoCupom("");
+    } else setMensagem("Código do cupom inválido!");
+  };
 
   useEffect(() => {
     const carrinhoSalvo = localStorage.getItem("resumo do carrinho");
@@ -32,12 +37,6 @@ export default function FinalizarCompra() {
       setCarrinho(JSON.parse(carrinhoSalvo));
     }
   }, []);
-
-  const handleChangeDesconto = (particao: number, cupom: number) => {
-    setValorParticao(particao);
-    setValorCupom(cupom);
-    setValorDesconto(total * particao + cupom);
-  };
 
   return (
     <div>
@@ -60,7 +59,10 @@ export default function FinalizarCompra() {
                   type="radio"
                   name="pagamento"
                   checked={valorParticao === 0}
-                  onChange={() => handleChangeDesconto(0, valorCupom)}
+                  onChange={() => {
+                    setValorParticao(0);
+                    setValorDesconto(total * 0 + valorCupom);
+                  }}
                   className="mr-2"
                 />
                 Pagar Tudo -R$ 0.00
@@ -70,7 +72,10 @@ export default function FinalizarCompra() {
                   type="radio"
                   name="pagamento"
                   checked={valorParticao === 0.5}
-                  onChange={() => handleChangeDesconto(0.5, valorCupom)}
+                  onChange={() => {
+                    setValorParticao(0.5);
+                    setValorDesconto(total * 0.5 + valorCupom);
+                  }}
                   className="mr-2"
                 />
                 Pagar 50% -R$ {(0.5 * total).toFixed(2)}
@@ -96,14 +101,22 @@ export default function FinalizarCompra() {
             <div>
               <p>Cupom</p>
               <div className="flex justify-between">
-                <p>Código do cupom</p>
+                <input
+                  type="text"
+                  value={codigoCupom}
+                  onChange={(e) => setCodigoCupom(e.target.value)} // Atualiza o estado com o texto digitado
+                  placeholder="Digite o código do cupom"
+                  className="border border-solid px-4 py-2 rounded-md"
+                />
                 <button
-                  onClick={() => handleChangeDesconto(valorParticao, 10)}
+                  onClick={handleChangeCupom} // Aqui você pode passar o valor e o desconto
                   className="border border-solid px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-500 transition"
                 >
                   Aplicar
                 </button>
               </div>
+              {mensagem && <p>{mensagem}</p>}{" "}
+              {/* Exibe a mensagem com base na validação */}
             </div>
           </div>
         </div>
@@ -157,10 +170,10 @@ export default function FinalizarCompra() {
               />
               <ResumoItemCarrinho
                 nome={"Desconto"}
-                valor={total - valorDesconto}
+                valor={valorDesconto}
                 adicional={false}
               />
-
+              {/**Modificar para apertar em pagar apagar o carrinho */}
               <div className="flex justify-between items-center mt-4 border-t pt-4">
                 <p className="text-2xl font-semibold">
                   Total: R$ {(total - valorDesconto).toFixed(2)}

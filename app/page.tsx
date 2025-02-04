@@ -12,6 +12,7 @@ export default function Home() {
           width={180}
           height={38}
           priority
+          unoptimized
         />
         <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2">
@@ -37,6 +38,7 @@ export default function Home() {
               alt="Vercel logomark"
               width={20}
               height={20}
+              unoptimized
             />
             Deploy now
           </a>

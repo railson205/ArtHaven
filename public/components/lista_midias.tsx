@@ -51,6 +51,7 @@ export default function Midias() {
                 objectFit: "cover",
                 borderRadius: "8px",
               }}
+              unoptimized
             />
           </div>
         </div>
