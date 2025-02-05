@@ -67,7 +67,7 @@ export default function Carrinho() {
       }));
     } else {
       setErros((prev) => ({ ...prev, [index]: "" }));
-      console.log(`Texto enviado para o produto ${index}:`, textos[index]);
+      //console.log(`Texto enviado para o produto ${index}:`, textos[index]);
       handleSalvarDetalhes(index);
     }
   };
@@ -163,9 +163,10 @@ export default function Carrinho() {
 
   async function handleSalvarDetalhes(index: number) {
     try {
-      const novo_detalhe = { detalhe: textos[index] };
+      const novo_detalhe = { detalhes: textos[index] };
+      console.log(novo_detalhe);
       const response = await fetch(
-        `${url_api}perfilCarrinho?nameTag=${usuario_logado}?id=${index}`,
+        `${url_api}perfilCarrinho?nameTag=${usuario_logado}&id=${index + 1}`,
         {
           method: "PATCH",
           headers: {
