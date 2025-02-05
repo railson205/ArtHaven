@@ -2,93 +2,73 @@
 
 import Divider from "@/public/components/divider";
 import Header from "@/public/components/headerbar";
+import { ResumoItemCarrinho } from "@/public/components/resumo_carrinho";
 import {
-  precoBaseCor,
+  calcularTotal,
+  itensSalvosMercado,
   precoBasePlanoDeFundo,
+  produtosSalvoMercado,
   tiposDeCor,
   tiposDePlanoDeFundo,
+  url_api,
+  usuario_logado,
 } from "@/public/constantes";
-import produtos from "@/public/produtos";
-import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
+import {
+  ItensMercadoInterface,
+  ProdutoCarrinhoInterface,
+} from "@/public/interfaces";
+import { Trash } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-
-interface ProdutoCarrinho {
-  id: number;
-  quantidade: number;
-  adicionalCor: number;
-  adicionalPlanoDeFundo: number;
-}
-
-interface Carrinho {
-  [key: number]: ProdutoCarrinho;
-}
+import { useEffect, useState } from "react";
 
 export default function Carrinho() {
   const router = useRouter();
 
-  const [produtosCarrinho, setProdutosCarrinho] = useState<ProdutoCarrinho[]>([
-    {
-      id: 1,
-      quantidade: 2,
-      adicionalCor: precoBaseCor,
-      adicionalPlanoDeFundo: 15,
-    },
-    {
-      id: 3,
-      quantidade: 1,
-      adicionalCor: 65,
-      adicionalPlanoDeFundo: precoBasePlanoDeFundo,
-    },
-  ]);
+  const [produtosCarrinho, setProdutosCarrinho] = useState<
+    ProdutoCarrinhoInterface[]
+  >([]);
 
-  const [editarOpen, setEditarOpen] = useState<Boolean[]>(
+  const [teste, setTeste] = useState<ItensMercadoInterface[]>([]);
+
+  const [editarOpen, setEditarOpen] = useState<boolean[]>(
     Array(produtosCarrinho.length).fill(false)
   );
-  const [texto, setTexto] = useState<string>("");
-  const [erro, setErro] = useState<string>("");
+  const [textos, setTextos] = useState<{ [key: number]: string }>({});
+  const [erros, setErros] = useState<{ [key: number]: string }>({});
 
-  // Função para atualizar a quantidade de um produto
-  const atualizarQuantidade = (id: number, quantidade: number) => {
+  const atualizarAdicional = (index: number, tipo: string, valor: string) => {
     setProdutosCarrinho((prev) => {
-      const updatedCarrinho = [...prev];
-      const produtoIndex = updatedCarrinho.findIndex(
-        (produto) => produto.id === id
-      );
-      if (produtoIndex !== -1) {
-        updatedCarrinho[produtoIndex].quantidade = Math.max(1, quantidade);
-      }
-      return updatedCarrinho;
+      const novoCarrinho = [...prev]; // Criar um novo array (nova referência)
+      novoCarrinho[index] = {
+        ...novoCarrinho[index],
+        [tipo === "cor" ? "adicionalCor" : "adicionalPlanoDeFundo"]: valor,
+      };
+      return novoCarrinho;
     });
   };
 
-  // Função para atualizar o adicional do produto (cor ou fundo)
-  const atualizarAdicional = (id: number, tipo: string, valor: number) => {
-    setProdutosCarrinho((prev) => {
-      const updatedCarrinho = [...prev];
-      const produtoIndex = updatedCarrinho.findIndex(
-        (produto) => produto.id === id
-      );
-      if (produtoIndex >= 0) {
-        if (tipo === "cor") updatedCarrinho[produtoIndex].adicionalCor = valor;
-        else if (tipo === "fundo")
-          updatedCarrinho[produtoIndex].adicionalPlanoDeFundo = valor;
-      }
-      return updatedCarrinho;
-    });
+  const handleChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    setTextos((prev) => ({
+      ...prev,
+      [index]: e.target.value,
+    }));
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
-    setTexto(e.target.value);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (index: number, e: React.FormEvent) => {
     e.preventDefault();
-    if (texto.trim().length === 0) {
-      setErro("O campo não pode estar vazio.");
+    if (!textos[index] || textos[index].trim().length === 0) {
+      setErros((prev) => ({
+        ...prev,
+        [index]: "O campo não pode estar vazio.",
+      }));
     } else {
-      setErro("");
-      console.log("Texto enviado:", texto);
+      setErros((prev) => ({ ...prev, [index]: "" }));
+      //console.log(`Texto enviado para o produto ${index}:`, textos[index]);
+      handleSalvarDetalhes(index);
     }
   };
 
@@ -100,81 +80,145 @@ export default function Carrinho() {
     router.push("/finalizar_compra");
   };
 
-  // Função para remover um produto do carrinho
-  const removerProduto = (id: number) => {
-    setProdutosCarrinho((prev) => prev.filter((produto) => produto.id !== id));
-    setEditarOpen(Array(produtosCarrinho.length).fill(false));
+  const removerProduto = (index: number) => {
+    setProdutosCarrinho((prev) => prev.filter((_, i) => i !== index));
+    setEditarOpen((prev) => [
+      ...prev.slice(0, index),
+      ...prev.slice(index + 1),
+    ]);
   };
+
+  async function fetchMercado(): Promise<ItensMercadoInterface[]> {
+    try {
+      const response = await fetch(
+        `${url_api}perfilMercado?nameTag=${usuario_logado}`
+      );
+      const data = await response.json();
+
+      return data.ItensMercado.map((itemLista: any, index: number) => ({
+        id_item_mercado: itemLista.id_ItemMercado,
+        nome: itemLista.nome,
+        descricao: itemLista.descricao,
+        preco: `R$ ${itemLista.preco.toFixed(2).replace(".", ",")}`,
+        imagem:
+          `${url_api}${itemLista.foto}` || itensSalvosMercado[index]?.imagem,
+        tipos_de_cor: itemLista.tiposCor,
+        tipos_de_fundo: itemLista.tiposFundo,
+        id_perfil: itemLista.perfil,
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar mercado:", error);
+      return [];
+    }
+  }
+
+  async function fetchCarrinho() {
+    try {
+      // Busca mercado e carrinho simultaneamente
+      const [produtosMercado, response] = await Promise.all([
+        fetchMercado(),
+        fetch(`${url_api}perfilCarrinho?nameTag=${usuario_logado}`, {
+          cache: "no-store",
+        }),
+      ]);
+
+      const data = await response.json();
+      const itensCarrinho: ProdutoCarrinhoInterface[] = data.ItensCarrinhos.map(
+        (itemLista: any) => {
+          const itemMercado = produtosMercado.find(
+            (item) => item.id_item_mercado === itemLista.itensMercado
+          );
+
+          if (!itemMercado) return null;
+
+          return {
+            id_item_carrinho: itemLista.id_ItemCarrinho,
+            nome: itemMercado.nome,
+            descricao: itemMercado.descricao,
+            preco: itemMercado.preco,
+            imagem: itemMercado.imagem,
+            detalhes: itemLista.detalhes,
+            adicionalCor: itemLista.tipoCor.toString(),
+            adicionalPlanoDeFundo: itemLista.tipoFundo,
+            tipos_de_cor: itemMercado.tipos_de_cor,
+            tipos_de_fundo: itemMercado.tipos_de_fundo,
+          };
+        }
+      ).filter(Boolean); // Remove valores `null`
+
+      setProdutosCarrinho(itensCarrinho);
+      // Inicializando o estado de textos com as descrições do carrinho
+      const textosIniciais = itensCarrinho.reduce((acc, item, index) => {
+        if (item) {
+          acc[index] = item.detalhes || "";
+        }
+        return acc;
+      }, {} as { [key: number]: string });
+
+      setTextos(textosIniciais);
+    } catch (error) {
+      console.error("Erro ao buscar carrinho:", error);
+    }
+  }
+
+  async function handleSalvarDetalhes(index: number) {
+    try {
+      const novo_detalhe = { detalhes: textos[index] };
+      console.log(novo_detalhe);
+      const response = await fetch(
+        `${url_api}perfilCarrinho?nameTag=${usuario_logado}&id=${index + 1}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(novo_detalhe),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar produto");
+      }
+
+      const data = await response.json();
+      console.log("Produto atualizado:", data);
+    } catch (error) {
+      console.log("Erro ao atualizar detalhes", error);
+    }
+  }
+
+  useEffect(() => {
+    fetchCarrinho();
+  }, []);
 
   return (
     <div className="w-full h-screen">
       <Header title="Carrinho" />
 
       <div className="flex w-full h-full">
-        {/* Detalhes do Carrinho */}
         <div className="flex-2 p-5 space-y-5">
-          {produtosCarrinho.map((produtoCarrinho, index) => (
-            <div
-              key={produtoCarrinho.id}
-              className="border rounded-lg shadow-md bg-white"
-            >
+          {produtosCarrinho.map((produto, index) => (
+            <div key={index} className="border rounded-lg shadow-md bg-white">
               <div className="flex items-center gap-6 p-4">
                 <div className="w-64 h-64 relative">
                   <Image
-                    src={produtos[produtoCarrinho.id].imagem}
-                    alt={produtos[produtoCarrinho.id].nome}
+                    src={produto.imagem}
+                    alt={produto.nome}
                     layout="fill"
                     objectFit="cover"
                     className="rounded-md"
+                    unoptimized
                   />
                 </div>
                 <div className="flex flex-col flex-1">
-                  <h2 className="text-3xl font-semibold">
-                    {produtos[produtoCarrinho.id].nome}
-                  </h2>
-                  <p className="text-lg">
-                    {produtos[produtoCarrinho.id].descricao}
-                  </p>
+                  <h2 className="text-3xl font-semibold">{produto.nome}</h2>
+                  <p className="text-lg">{produto.descricao}</p>
                   <p className="text-xl text-green-600 font-bold">
-                    {produtos[produtoCarrinho.id].preco}
+                    {produto.preco}
                   </p>
                 </div>
-
-                {/* Controles de Quantidade */}
+                {/*Div dos botões de editar e excluir */}
                 <div className="flex gap-2 flex-col items-center">
-                  <div className="flex items-center justify-between w-full h-full border rounded-md bg-blue-700 px-3 py-2">
-                    {produtoCarrinho.quantidade > 1 ? (
-                      <button
-                        className="p-2"
-                        onClick={() =>
-                          atualizarQuantidade(
-                            produtoCarrinho.id,
-                            produtoCarrinho.quantidade - 1
-                          )
-                        }
-                      >
-                        <ChevronLeft size={18} />
-                      </button>
-                    ) : (
-                      <button className="p-2">
-                        <Trash size={18} />
-                      </button>
-                    )}
-                    <span className="px-5 font-bold">
-                      {produtoCarrinho.quantidade}
-                    </span>
-                    <button
-                      className="p-2"
-                      onClick={() =>
-                        atualizarQuantidade(
-                          produtoCarrinho.id,
-                          produtoCarrinho.quantidade + 1
-                        )
-                      }
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
                   <button
                     onClick={() => {
                       const toUpdate = !editarOpen[index];
@@ -182,76 +226,86 @@ export default function Carrinho() {
                       update[index] = toUpdate;
                       setEditarOpen(update);
                     }}
-                    className="flex items-center gap-2 px-12 py-2 text-black bg-white border border-blue-700 rounded-md hover:bg-green-600 transition"
+                    className="flex items-center gap-2 px-12 py-2 text-black bg-white border border-blue-700 rounded-md hover:bg-blue-700 transition"
                   >
                     <span className="font-bold">Editar</span>
                   </button>
+                  <button
+                    onClick={() => removerProduto(index)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash size={24} />
+                  </button>
                 </div>
               </div>
-
               {/* Formulário de Edição */}
               {editarOpen[index] && (
                 <div className="flex bg-gray-100">
-                  <form onSubmit={handleSubmit} className="p-6 max-w-lg">
+                  <form
+                    onSubmit={(e) => handleSubmit(index, e)}
+                    className="p-6 max-w-lg"
+                  >
                     <textarea
                       className="w-96 h-64 p-4 border rounded-md shadow-md resize-none"
                       rows={5}
-                      value={texto}
-                      onChange={handleChange}
+                      value={textos[index] || ""}
+                      onChange={(e) => handleChange(index, e)}
                       placeholder="Digite os detalhes da arte aqui..."
                     />
-                    {erro && <p className="text-red-500 mt-2">{erro}</p>}
+                    {erros[index] && (
+                      <p className="text-red-500 mt-2">{erros[index]}</p>
+                    )}
+                    <button
+                      type="submit"
+                      className="mt-2 px-4 py-2 bg-blue-700 text-white rounded-md"
+                    >
+                      Salvar Detalhes
+                    </button>
                   </form>
 
                   {/* Seção de Seleção de Cores e Fundos */}
                   <div>
-                    <div className="mb-4">
+                    <div className="mb-4 pr-5 pt-5">
                       <h3 className="text-lg font-semibold">Selecione a Cor</h3>
-                      {Object.entries(tiposDeCor).map(([cor, valor]) => (
-                        <label key={cor} className="block mb-2">
-                          <input
-                            type="radio"
-                            name="cor"
-                            value={valor}
-                            checked={produtoCarrinho.adicionalCor === valor}
-                            onChange={() =>
-                              atualizarAdicional(
-                                produtoCarrinho.id,
-                                "cor",
-                                valor
-                              )
-                            }
-                            className="mr-2"
-                          />
-                          {cor} - R$ {valor}
-                        </label>
-                      ))}
+                      {Object.entries(produto.tipos_de_cor).map(
+                        ([cor, valor]) => {
+                          return (
+                            <label key={cor} className="block mb-2">
+                              <input
+                                type="radio"
+                                name="cor"
+                                value={valor}
+                                checked={produto.adicionalCor === cor}
+                                onChange={() =>
+                                  atualizarAdicional(index, "cor", cor)
+                                }
+                                className="mr-2"
+                              />
+                              {cor} - R$ {valor.toFixed(2).replace(".", ",")}
+                            </label>
+                          );
+                        }
+                      )}
                     </div>
 
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold">
                         Selecione o Fundo
                       </h3>
-                      {Object.entries(tiposDePlanoDeFundo).map(
+                      {Object.entries(produto.tipos_de_fundo).map(
                         ([fundo, valor]) => (
                           <label key={fundo} className="block mb-2">
                             <input
                               type="radio"
                               name="fundo"
                               value={valor}
-                              checked={
-                                produtoCarrinho.adicionalPlanoDeFundo === valor
-                              }
+                              checked={produto.adicionalPlanoDeFundo === fundo}
                               onChange={() =>
-                                atualizarAdicional(
-                                  produtoCarrinho.id,
-                                  "fundo",
-                                  valor
-                                )
+                                atualizarAdicional(index, "fundo", fundo)
                               }
                               className="mr-2"
                             />
-                            {fundo} - R$ {valor}
+                            {fundo} - R$ {valor.toFixed(2).replace(".", ",")}
                           </label>
                         )
                       )}
@@ -263,55 +317,40 @@ export default function Carrinho() {
           ))}
         </div>
 
-        {/* Resumo e Total */}
         <div className="flex-1 p-5">
           <div className="bg-white shadow-md p-4 rounded-lg h-full flex flex-col">
             <h2 className="text-2xl font-semibold mb-4">Resumo do Carrinho</h2>
             <div className="flex-1 overflow-y-auto space-y-4">
-              {produtosCarrinho.map((produtoCarrinho) => (
-                <div key={produtoCarrinho.id}>
-                  <div className="flex justify-between items-center">
-                    <p className="text-lg font-medium">
-                      {produtos[produtoCarrinho.id].nome}
-                    </p>
-                    <p className="text-lg font-medium">
-                      {produtos[produtoCarrinho.id].preco} x{" "}
-                      {produtoCarrinho.quantidade}
-                    </p>
-                  </div>
+              {produtosCarrinho.map((produto, index) => (
+                <div key={index}>
+                  <ResumoItemCarrinho
+                    nome={produto.nome}
+                    valor={parseFloat(
+                      produto.preco.replace("R$ ", "").replace(",", ".")
+                    )}
+                    adicional={false}
+                  />
 
-                  {/* Adicionais de Cor e Fundo */}
-                  {produtoCarrinho.adicionalCor !== precoBaseCor && (
-                    <div className="flex justify-between items-center">
-                      <p className="text-base font-medium text-gray-500">
-                        {
-                          Object.entries(tiposDeCor).find(
-                            ([key, value]) =>
-                              value === produtoCarrinho.adicionalCor
-                          )?.[0]
-                        }
-                      </p>
-                      <p className="text-lg font-medium">
-                        R$ {produtoCarrinho.adicionalCor},00
-                      </p>
-                    </div>
-                  )}
-                  {produtoCarrinho.adicionalPlanoDeFundo !==
-                    precoBasePlanoDeFundo && (
-                    <div className="flex justify-between items-center">
-                      <p className="text-base font-medium text-gray-500">
-                        {
-                          Object.entries(tiposDePlanoDeFundo).find(
-                            ([key, value]) =>
-                              value === produtoCarrinho.adicionalPlanoDeFundo
-                          )?.[0]
-                        }
-                      </p>
-                      <p className="text-lg font-medium">
-                        R$ {produtoCarrinho.adicionalPlanoDeFundo},00
-                      </p>
-                    </div>
-                  )}
+                  <ResumoItemCarrinho
+                    nome={
+                      Object.entries(produto.tipos_de_cor).find(
+                        ([cor, _]) => cor === produto.adicionalCor
+                      )?.[0]
+                    }
+                    valor={produto.tipos_de_cor[produto.adicionalCor]}
+                    adicional={true}
+                  />
+                  <ResumoItemCarrinho
+                    nome={
+                      Object.entries(produto.tipos_de_fundo).find(
+                        ([fundo, _]) => fundo == produto.adicionalPlanoDeFundo
+                      )?.[0]
+                    }
+                    valor={
+                      produto.tipos_de_fundo[produto.adicionalPlanoDeFundo]
+                    }
+                    adicional={true}
+                  />
                   <Divider />
                 </div>
               ))}
@@ -320,21 +359,7 @@ export default function Carrinho() {
             <div className="flex justify-between items-center mt-4 border-t pt-4">
               <p className="text-2xl font-semibold">
                 Total: R$
-                {produtosCarrinho
-                  .reduce((total, produtoCarrinho) => {
-                    const produto = produtos[produtoCarrinho.id];
-                    const preco = parseFloat(
-                      produto.preco.replace("R$", "").replace(",", ".")
-                    );
-                    return (
-                      total +
-                      (preco +
-                        produtoCarrinho.adicionalCor +
-                        produtoCarrinho.adicionalPlanoDeFundo) *
-                        produtoCarrinho.quantidade
-                    );
-                  }, 0)
-                  .toFixed(2)}
+                {calcularTotal(produtosCarrinho).toFixed(2)}
               </p>
               <button
                 onClick={handleFinalizarCompra}

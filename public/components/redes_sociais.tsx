@@ -3,10 +3,10 @@ import Image from "next/image";
 interface RedeSocialProps {
   src: string;
   alt: string;
-  nome: string;
+  nametag: string;
 }
 
-export default function RedeSocial({ src, alt, nome }: RedeSocialProps) {
+export default function RedeSocial({ src, alt, nametag }: RedeSocialProps) {
   return (
     <div
       style={{
@@ -44,7 +44,7 @@ export default function RedeSocial({ src, alt, nome }: RedeSocialProps) {
           marginTop: "0.5rem", // mt-2 equivalente
         }}
       >
-        {nome}
+        {nametag}
       </p>
     </div>
   );
