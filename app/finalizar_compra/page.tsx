@@ -178,7 +178,7 @@ export default function FinalizarCompra() {
                 <p className="text-2xl font-semibold">
                   Total: R$ {(total - valorDesconto).toFixed(2)}
                 </p>
-                <Link href="/perfil">
+                <Link href="/">
                   <button className="bg-blue-700 text-white px-6 py-2 rounded-md hover:bg-blue-800 transition">
                     Pagar
                   </button>

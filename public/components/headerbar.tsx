@@ -93,7 +93,7 @@ export default function Header({ title }: HeaderProps) {
             <ShoppingCart size={24} />
           </button>
         </Link>
-        <Link href="/perfil">
+        <Link href="/">
           <button className="p-4">
             <User size={24} style={{ color: "black" }} />
           </button>
