@@ -30,7 +30,7 @@ export default function Perfil() {
     const fetchPerfil = async () => {
       try {
         const response = await fetch(
-          `${url_api}perfilMercado?nameTag=${usuario_logado}`
+          `${url_api}/perfilMercado?nameTag=${usuario_logado}`
         );
         const text = await response.text();
         const data = JSON.parse(text);
@@ -43,7 +43,7 @@ export default function Perfil() {
             descricao: data.perfil[0].descricao,
             estrelas: data.perfil[0].estrelas,
             tags: data.perfil[0].tags,
-            foto: `${url_api}${data.perfil[0].foto}` || perfilSalvo.foto,
+            foto: `${url_api}/${data.perfil[0].foto}` || perfilSalvo.foto,
             outrosSites: data.perfil[0].outrosSites,
           });
           console.log(data.perfil[0].descricao);

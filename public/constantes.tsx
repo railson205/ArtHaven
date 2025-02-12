@@ -14,7 +14,7 @@ export const transformaValor = (valor: number) =>
   `R$ ${valor.toFixed(2).replace(".", ",")}`;
 
 export const usuario_logado = "LouisLrnt";
-export const url_api = "http://127.0.0.1:8000/";
+export const url_api = "http://127.0.0.1:8000";
 
 export const precoBaseCor = 50;
 export const precoBasePlanoDeFundo = 0;

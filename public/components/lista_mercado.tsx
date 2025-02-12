@@ -17,7 +17,7 @@ export default function ListaItensMercado() {
     const fetchMercado = async () => {
       try {
         const response = await fetch(
-          `${url_api}perfilMercado?nameTag=${usuario_logado}`
+          `${url_api}/perfilMercado?nameTag=${usuario_logado}`
         );
 
         const data = await response.json();
@@ -28,7 +28,7 @@ export default function ListaItensMercado() {
             nome: itemLista.nome,
             descricao: itemLista.descricao,
             preco: transformaValor(itemLista.preco),
-            imagem: `${url_api}${itemLista.foto}`,
+            imagem: `${url_api}/${itemLista.foto}`,
             tipos_de_cor: itemLista.tiposCor,
             tipos_de_fundo: itemLista.tiposFundo,
             id_perfil: itemLista.perfil,
@@ -54,7 +54,7 @@ export default function ListaItensMercado() {
     };
     try {
       const resp = await fetch(
-        `${url_api}perfilCarrinho?nameTag=${usuario_logado}`,
+        `${url_api}/perfilCarrinho?nameTag=${usuario_logado}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

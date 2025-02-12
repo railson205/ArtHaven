@@ -28,36 +28,37 @@ export default function HistoricoCompras() {
   async function fetchHistorico() {
     try {
       const response = await fetch(
-        `${url_api}Coloque alguma coisa?nameTag=${usuario_logado}`,
+        `${url_api}/perfilCompras?nameTag=${usuario_logado}`,
         { cache: "no-store" }
       );
       const data = await response.json();
-      const itensHistorico: ProdutoHistorico[] = data.itensHistorico.map(
+      const itensHistorico: ProdutoHistorico[] = data.Compras.map(
         (itemLista: any) => {
           return {
-            id: "3",
-            imagem: itensSalvosMercado[0].imagem,
-            data_pedido: "2024-01-10",
-            data_entrega: "2024-01-15",
-            nome_artista: "Beatriz Mendes",
-            status: "Entregue",
-            alerta: "Nenhum",
-            metodo_pagamento: { tipo: "Pix", final: "N/A" },
-            tipo_pedido: "HeadShot",
-            preco_pedido: 50,
-            adicionais: [
-              { nome: "Preto e Branco", valor: 50 },
-              { nome: "Sem Fundo", valor: 0 },
-            ],
-            detalhes_valor: { particao: 0, cupom: 0 },
+            id: itemLista.id.toString(),
+            imagem: `${url_api}${itemLista.imagem}`,
+            data_pedido: itemLista.data_pedido,
+            data_entrega: itemLista.data_entrega || "",
+            nome_artista: itemLista.nome_artista,
+            status: itemLista.status,
+            alerta: itemLista.alerta,
+            metodo_pagamento: itemLista.metodo_pagamento,
+            tipo_pedido: itemLista.tipo_pedido,
+            preco_pedido: itemLista.preco_pedido,
+            adicionais: itemLista.adicionais,
+            detalhes_valor: itemLista.detalhes_pedido,
           };
         }
       );
-    } catch (error) {}
+      setProdutoHistorico([...itensHistorico]);
+    } catch (error) {
+      console.log("Erro na requisição dos itens do historico", error);
+    }
   }
 
   useEffect(() => {
-    setProdutoHistorico(produtos_historico_salvos);
+    fetchHistorico();
+    //setProdutoHistorico(produtos_historico_salvos);
   }, []);
 
   return (

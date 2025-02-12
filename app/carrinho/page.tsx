@@ -90,7 +90,7 @@ export default function Carrinho() {
   async function fetchMercado(): Promise<ItensMercadoInterface[]> {
     try {
       const response = await fetch(
-        `${url_api}perfilMercado?nameTag=${usuario_logado}`
+        `${url_api}/perfilMercado?nameTag=${usuario_logado}`
       );
       const data = await response.json();
 
@@ -100,7 +100,7 @@ export default function Carrinho() {
         descricao: itemLista.descricao,
         preco: transformaValor(itemLista.preco),
         imagem:
-          `${url_api}${itemLista.foto}` || itensSalvosMercado[index]?.imagem,
+          `${url_api}/${itemLista.foto}` || itensSalvosMercado[index]?.imagem,
         tipos_de_cor: itemLista.tiposCor,
         tipos_de_fundo: itemLista.tiposFundo,
         perfilComprador: itemLista.perfil,
@@ -116,7 +116,7 @@ export default function Carrinho() {
       // Busca mercado e carrinho simultaneamente
       const [produtosMercado, response] = await Promise.all([
         fetchMercado(),
-        fetch(`${url_api}perfilCarrinho?nameTag=${usuario_logado}`, {
+        fetch(`${url_api}/perfilCarrinho?nameTag=${usuario_logado}`, {
           cache: "no-store",
         }),
       ]);
@@ -167,7 +167,7 @@ export default function Carrinho() {
       const novo_detalhe = { detalhes: textos[index] };
       console.log(novo_detalhe);
       const response = await fetch(
-        `${url_api}perfilCarrinho?nameTag=${usuario_logado}&id=${index + 1}`,
+        `${url_api}/perfilCarrinho?nameTag=${usuario_logado}&id=${index + 1}`,
         {
           method: "PATCH",
           headers: {
