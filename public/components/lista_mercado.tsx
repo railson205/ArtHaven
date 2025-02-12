@@ -1,6 +1,11 @@
 import Image from "next/image";
 import { ShoppingCart, DollarSign } from "lucide-react";
-import { itensSalvosMercado, url_api, usuario_logado } from "../constantes";
+import {
+  itensSalvosMercado,
+  transformaValor,
+  url_api,
+  usuario_logado,
+} from "../constantes";
 import { ItensMercadoInterface } from "../interfaces";
 import { useEffect, useState } from "react";
 
@@ -12,7 +17,7 @@ export default function ListaItensMercado() {
     const fetchMercado = async () => {
       try {
         const response = await fetch(
-          `${url_api}perfilMercado?nameTag=${usuario_logado}`
+          `${url_api}/perfilMercado?nameTag=${usuario_logado}`
         );
 
         const data = await response.json();
@@ -22,11 +27,11 @@ export default function ListaItensMercado() {
             id_item_mercado: itemLista.id_ItemMercado,
             nome: itemLista.nome,
             descricao: itemLista.descricao,
-            preco: `R$ ${itemLista.preco.toFixed(2).replace(".", ",")}`,
-            imagem: `${url_api}${itemLista.foto}`,
+            preco: transformaValor(itemLista.preco),
+            imagem: `${url_api}/${itemLista.foto}`,
             tipos_de_cor: itemLista.tiposCor,
             tipos_de_fundo: itemLista.tiposFundo,
-            id_perfil: itemLista.perfil,
+            perfilComprador: itemLista.id_Perfil,
           })
         );
 
@@ -43,13 +48,13 @@ export default function ListaItensMercado() {
     const bodyPost = {
       detalhes: "",
       itensMercado: item.id_item_mercado,
-      perfilComprador: item.id_perfil,
+      perfilComprador: item.perfilComprador,
       tipoCor: Object.keys(item.tipos_de_cor)[0],
       tipoFundo: Object.keys(item.tipos_de_fundo)[0],
     };
     try {
       const resp = await fetch(
-        `${url_api}perfilCarrinho?nameTag=${usuario_logado}`,
+        `${url_api}/perfilCarrinho?nameTag=${usuario_logado}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -83,8 +88,7 @@ export default function ListaItensMercado() {
               src={produto.imagem}
               alt={produto.nome}
               layout="fill"
-              objectFit="cover"
-              className="rounded-md"
+              className="rounded-md object-cover"
               unoptimized
             />
           </div>

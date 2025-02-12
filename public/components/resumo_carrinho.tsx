@@ -1,3 +1,5 @@
+import { transformaValor } from "../constantes";
+
 interface ResumoItemCarrinho {
   nome: string | undefined;
   valor: number;
@@ -20,9 +22,7 @@ export function ResumoItemCarrinho({
       >
         {nome !== undefined ? nome : ""}
       </p>
-      <p className="text-lg font-medium">
-        R$ {valor.toFixed(2).replace(".", ",")}
-      </p>
+      <p className="text-lg font-medium">{transformaValor(valor)}</p>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   produtosSalvoMercado,
   tiposDeCor,
   tiposDePlanoDeFundo,
+  transformaValor,
   url_api,
   usuario_logado,
 } from "@/public/constantes";
@@ -28,8 +29,6 @@ export default function Carrinho() {
   const [produtosCarrinho, setProdutosCarrinho] = useState<
     ProdutoCarrinhoInterface[]
   >([]);
-
-  const [teste, setTeste] = useState<ItensMercadoInterface[]>([]);
 
   const [editarOpen, setEditarOpen] = useState<boolean[]>(
     Array(produtosCarrinho.length).fill(false)
@@ -67,7 +66,6 @@ export default function Carrinho() {
       }));
     } else {
       setErros((prev) => ({ ...prev, [index]: "" }));
-      //console.log(`Texto enviado para o produto ${index}:`, textos[index]);
       handleSalvarDetalhes(index);
     }
   };
@@ -91,7 +89,7 @@ export default function Carrinho() {
   async function fetchMercado(): Promise<ItensMercadoInterface[]> {
     try {
       const response = await fetch(
-        `${url_api}perfilMercado?nameTag=${usuario_logado}`
+        `${url_api}/perfilMercado?nameTag=${usuario_logado}`
       );
       const data = await response.json();
 
@@ -99,12 +97,12 @@ export default function Carrinho() {
         id_item_mercado: itemLista.id_ItemMercado,
         nome: itemLista.nome,
         descricao: itemLista.descricao,
-        preco: `R$ ${itemLista.preco.toFixed(2).replace(".", ",")}`,
+        preco: transformaValor(itemLista.preco),
         imagem:
-          `${url_api}${itemLista.foto}` || itensSalvosMercado[index]?.imagem,
+          `${url_api}/${itemLista.foto}` || itensSalvosMercado[index]?.imagem,
         tipos_de_cor: itemLista.tiposCor,
         tipos_de_fundo: itemLista.tiposFundo,
-        id_perfil: itemLista.perfil,
+        perfilComprador: itemLista.id_Perfil,
       }));
     } catch (error) {
       console.error("Erro ao buscar mercado:", error);
@@ -117,18 +115,16 @@ export default function Carrinho() {
       // Busca mercado e carrinho simultaneamente
       const [produtosMercado, response] = await Promise.all([
         fetchMercado(),
-        fetch(`${url_api}perfilCarrinho?nameTag=${usuario_logado}`, {
+        fetch(`${url_api}/perfilCarrinho?nameTag=${usuario_logado}`, {
           cache: "no-store",
         }),
       ]);
-
       const data = await response.json();
       const itensCarrinho: ProdutoCarrinhoInterface[] = data.ItensCarrinhos.map(
         (itemLista: any) => {
           const itemMercado = produtosMercado.find(
             (item) => item.id_item_mercado === itemLista.itensMercado
           );
-
           if (!itemMercado) return null;
 
           return {
@@ -142,6 +138,8 @@ export default function Carrinho() {
             adicionalPlanoDeFundo: itemLista.tipoFundo,
             tipos_de_cor: itemMercado.tipos_de_cor,
             tipos_de_fundo: itemMercado.tipos_de_fundo,
+            id_perfil_comprador: itemMercado.perfilComprador,
+            id_item_mercado: itemMercado.id_item_mercado,
           };
         }
       ).filter(Boolean); // Remove valores `null`
@@ -164,9 +162,8 @@ export default function Carrinho() {
   async function handleSalvarDetalhes(index: number) {
     try {
       const novo_detalhe = { detalhes: textos[index] };
-      console.log(novo_detalhe);
       const response = await fetch(
-        `${url_api}perfilCarrinho?nameTag=${usuario_logado}&id=${index + 1}`,
+        `${url_api}/perfilCarrinho?nameTag=${usuario_logado}&id=${index + 1}`,
         {
           method: "PATCH",
           headers: {
@@ -205,8 +202,7 @@ export default function Carrinho() {
                     src={produto.imagem}
                     alt={produto.nome}
                     layout="fill"
-                    objectFit="cover"
-                    className="rounded-md"
+                    className="rounded-md object-cover"
                     unoptimized
                   />
                 </div>
@@ -281,7 +277,7 @@ export default function Carrinho() {
                                 }
                                 className="mr-2"
                               />
-                              {cor} - R$ {valor.toFixed(2).replace(".", ",")}
+                              {cor} - {transformaValor(valor)}
                             </label>
                           );
                         }
@@ -305,7 +301,7 @@ export default function Carrinho() {
                               }
                               className="mr-2"
                             />
-                            {fundo} - R$ {valor.toFixed(2).replace(".", ",")}
+                            {fundo} - {transformaValor(valor)}
                           </label>
                         )
                       )}
@@ -358,8 +354,7 @@ export default function Carrinho() {
 
             <div className="flex justify-between items-center mt-4 border-t pt-4">
               <p className="text-2xl font-semibold">
-                Total: R$
-                {calcularTotal(produtosCarrinho).toFixed(2)}
+                Total: {transformaValor(calcularTotal(produtosCarrinho))}
               </p>
               <button
                 onClick={handleFinalizarCompra}
