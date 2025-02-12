@@ -40,9 +40,9 @@ export default function Perfil() {
             id_perfil: data.perfil[0].id_perfil,
             nome: data.perfil[0].nome,
             nameTag: data.perfil[0].nameTag,
+            descricao: data.perfil[0].descricao,
             estrelas: data.perfil[0].estrelas,
             tags: data.perfil[0].tags,
-            descricao: data.perfil[0].descricao,
             foto: `${url_api}${data.perfil[0].foto}` || perfilSalvo.foto,
             outrosSites: data.perfil[0].outrosSites,
           });
@@ -81,8 +81,7 @@ export default function Perfil() {
             src={perfilInfo.foto}
             alt="Foto de perfil"
             layout="fill"
-            objectFit="cover"
-            className="rounded-md"
+            className="rounded-md object-cover"
             unoptimized
           />
         </div>

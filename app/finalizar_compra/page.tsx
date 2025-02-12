@@ -5,6 +5,7 @@ import Header from "@/public/components/headerbar";
 import {
   calcularTotal,
   cod_cupom as cod_cupom_valido,
+  transformaValor,
 } from "@/public/constantes";
 import { ProdutoCarrinhoInterface } from "@/public/interfaces";
 import { CreditCard } from "lucide-react";
@@ -21,7 +22,10 @@ export default function FinalizarCompra() {
   const [codigoCupom, setCodigoCupom] = useState("");
   const [mensagem, setMensagem] = useState("");
 
-  // Função para verificar o código do cupom e aplicar o desconto
+  const [metodoPagamento, setMetodoPagamento] = useState("Débito"); // Padrão inicial
+  const [numerosFinais, setNumerosFinais] = useState("8432"); // Número final do cartão
+
+  // Verifica o código do cupom e aplica o desconto
   const handleChangeCupom = () => {
     if (codigoCupom === cod_cupom_valido) {
       setValorCupom(10);
@@ -31,12 +35,44 @@ export default function FinalizarCompra() {
     } else setMensagem("Código do cupom inválido!");
   };
 
+  const handleFinalizarCompra = () => {
+    const lista: any[] = [];
+    carrinho.map((item) => {
+      const post = {
+        id_perfil_comprador: item.id_perfil_comprador,
+        metodo_pagamento: { tipo: metodoPagamento, final: numerosFinais },
+        id_item_mercado: item.id_item_mercado,
+        detalhes: item.detalhes,
+        tipo_cor: item.adicionalCor,
+        tipo_fundo: item.adicionalPlanoDeFundo,
+        particao: valorParticao,
+        cupom: valorCupom,
+      };
+      lista.push(post);
+    });
+    console.log(lista);
+  };
+
   useEffect(() => {
     const carrinhoSalvo = localStorage.getItem("resumo do carrinho");
     if (carrinhoSalvo) {
       setCarrinho(JSON.parse(carrinhoSalvo));
     }
   }, []);
+
+  // Atualiza o método de pagamento
+  const handleMetodoPagamentoChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const novoMetodo = e.target.value;
+    setMetodoPagamento(novoMetodo);
+
+    if (novoMetodo === "Débito" || novoMetodo === "Crédito") {
+      setNumerosFinais(""); // Limpa o campo para forçar o usuário a digitar novamente
+    } else {
+      setNumerosFinais(""); // Remove os números finais se não for cartão
+    }
+  };
 
   return (
     <div>
@@ -78,23 +114,38 @@ export default function FinalizarCompra() {
                   }}
                   className="mr-2"
                 />
-                Pagar 50% -R$ {(0.5 * total).toFixed(2)}
+                Pagar 50% - {transformaValor(0.5 * total)}
               </label>
             </div>
             <Divider />
             <div>
               <p className="text-3xl">Método de Pagamento</p>
-              <div className="flex justify-between pt-4">
-                <div className="flex">
+              <div className="pt-4">
+                <div className="flex items-center">
                   <CreditCard size={30} />
                   <div className="pl-5">
-                    <p>Débito</p>
-                    <p>Final: 8432</p>
+                    <select
+                      value={metodoPagamento}
+                      onChange={handleMetodoPagamentoChange}
+                      className="border border-gray-400 rounded-md px-2 py-1"
+                    >
+                      <option value="Pix">Pix</option>
+                      <option value="Dinheiro">Dinheiro</option>
+                      <option value="Débito">Débito</option>
+                      <option value="Crédito">Crédito</option>
+                    </select>
+                    {["Débito", "Crédito"].includes(metodoPagamento) && (
+                      <input
+                        type="text"
+                        value={numerosFinais}
+                        onChange={(e) => setNumerosFinais(e.target.value)}
+                        placeholder="Últimos 4 dígitos"
+                        maxLength={4}
+                        className="ml-3 border border-gray-400 rounded-md px-2 py-1 w-20"
+                      />
+                    )}
                   </div>
                 </div>
-                <button className="border border-solid px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-500 transition">
-                  Alterar
-                </button>
               </div>
             </div>
             <Divider />
@@ -104,19 +155,18 @@ export default function FinalizarCompra() {
                 <input
                   type="text"
                   value={codigoCupom}
-                  onChange={(e) => setCodigoCupom(e.target.value)} // Atualiza o estado com o texto digitado
+                  onChange={(e) => setCodigoCupom(e.target.value)}
                   placeholder="Digite o código do cupom"
                   className="border border-solid px-4 py-2 rounded-md"
                 />
                 <button
-                  onClick={handleChangeCupom} // Aqui você pode passar o valor e o desconto
+                  onClick={handleChangeCupom}
                   className="border border-solid px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-500 transition"
                 >
                   Aplicar
                 </button>
               </div>
-              {mensagem && <p>{mensagem}</p>}{" "}
-              {/* Exibe a mensagem com base na validação */}
+              {mensagem && <p>{mensagem}</p>}
             </div>
           </div>
         </div>
@@ -133,7 +183,6 @@ export default function FinalizarCompra() {
                     )}
                     adicional={false}
                   />
-
                   <ResumoItemCarrinho
                     nome={
                       Object.entries(produto.tipos_de_cor).find(
@@ -173,16 +222,17 @@ export default function FinalizarCompra() {
                 valor={valorDesconto}
                 adicional={false}
               />
-              {/**Modificar para apertar em pagar apagar o carrinho */}
+
               <div className="flex justify-between items-center mt-4 border-t pt-4">
                 <p className="text-2xl font-semibold">
-                  Total: R$ {(total - valorDesconto).toFixed(2)}
+                  Total: {transformaValor(total - valorDesconto)}
                 </p>
-                <Link href="/">
-                  <button className="bg-blue-700 text-white px-6 py-2 rounded-md hover:bg-blue-800 transition">
-                    Pagar
-                  </button>
-                </Link>
+                <button
+                  onClick={handleFinalizarCompra}
+                  className="bg-blue-700 text-white px-6 py-2 rounded-md hover:bg-blue-800 transition"
+                >
+                  Pagar
+                </button>
               </div>
             </div>
           </div>
