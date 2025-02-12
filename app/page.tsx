@@ -26,33 +26,58 @@ export default function Perfil() {
   const [perfilInfo, setPerfilInfo] = useState<PerfilInterface>(perfilSalvo);
   const [selected, setSelected] = useState<string>("Mídias");
 
-  useEffect(() => {
-    const fetchPerfil = async () => {
-      try {
-        const response = await fetch(
-          `${url_api}/perfilMercado?nameTag=${usuario_logado}`
-        );
-        const text = await response.text();
-        const data = JSON.parse(text);
+  const fetchPerfil = async () => {
+    try {
+      const response = await fetch(
+        `${url_api}/perfilMercado?nameTag=${usuario_logado}`
+      );
+      const text = await response.text();
+      const data = JSON.parse(text);
 
-        if (data?.perfil?.length) {
-          setPerfilInfo({
-            id_perfil: data.perfil[0].id_perfil,
-            nome: data.perfil[0].nome,
-            nameTag: data.perfil[0].nameTag,
-            descricao: data.perfil[0].descricao,
-            estrelas: data.perfil[0].estrelas,
-            tags: data.perfil[0].tags,
-            foto: `${url_api}/${data.perfil[0].foto}` || perfilSalvo.foto,
-            outrosSites: data.perfil[0].outrosSites,
-          });
-          console.log(data.perfil[0].descricao);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar perfil:", error);
+      if (data?.perfil?.length) {
+        setPerfilInfo({
+          id_perfil: data.perfil[0].id_perfil,
+          nome: data.perfil[0].nome,
+          nameTag: data.perfil[0].nameTag,
+          descricao: data.perfil[0].descricao,
+          estrelas: data.perfil[0].estrelas,
+          tags: data.perfil[0].tags,
+          foto: `${url_api}/${data.perfil[0].foto}` || perfilSalvo.foto,
+          outrosSites: data.perfil[0].outrosSites,
+        });
       }
-    };
+    } catch (error) {
+      console.error("Erro ao buscar perfil:", error);
+    }
+  };
+
+  const fetchMidias = async () => {
+    try {
+      const response = await fetch(
+        `${url_api}/perfilMidia?nameTag=${usuario_logado}`
+      );
+      const text = await response.text();
+      const data = JSON.parse(text);
+
+      if (data?.Midia?.length > 0) {
+        const midiasPerfil = data.Midia.map((itemLista: any) => {
+          return {
+            id_midia: itemLista.id_Midia,
+            imagem: `${url_api}${itemLista.foto}`,
+            data_postagem: itemLista.dataPostagem || "",
+            id_perfil: itemLista.id_Perfil,
+          };
+        });
+        console.log(midiasPerfil);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar perfil:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchPerfil();
+    fetchMidias();
   }, []);
 
   const renderComponent = () => {
