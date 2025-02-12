@@ -24,8 +24,6 @@ export default function ModalDenuncia({ id, fecharModal }: ModalDenunciaProps) {
       detalhesDenuncia,
     });
 
-    // Aqui você pode adicionar a lógica para enviar a denúncia para um backend
-
     fecharModal(); // Fecha o modal após enviar
   };
 

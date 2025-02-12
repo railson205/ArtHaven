@@ -66,7 +66,6 @@ export default function Carrinho() {
       }));
     } else {
       setErros((prev) => ({ ...prev, [index]: "" }));
-      //console.log(`Texto enviado para o produto ${index}:`, textos[index]);
       handleSalvarDetalhes(index);
     }
   };
@@ -103,7 +102,7 @@ export default function Carrinho() {
           `${url_api}/${itemLista.foto}` || itensSalvosMercado[index]?.imagem,
         tipos_de_cor: itemLista.tiposCor,
         tipos_de_fundo: itemLista.tiposFundo,
-        perfilComprador: itemLista.perfil,
+        perfilComprador: itemLista.id_Perfil,
       }));
     } catch (error) {
       console.error("Erro ao buscar mercado:", error);
@@ -120,14 +119,12 @@ export default function Carrinho() {
           cache: "no-store",
         }),
       ]);
-      console.log(produtosMercado);
       const data = await response.json();
       const itensCarrinho: ProdutoCarrinhoInterface[] = data.ItensCarrinhos.map(
         (itemLista: any) => {
           const itemMercado = produtosMercado.find(
             (item) => item.id_item_mercado === itemLista.itensMercado
           );
-
           if (!itemMercado) return null;
 
           return {
@@ -165,7 +162,6 @@ export default function Carrinho() {
   async function handleSalvarDetalhes(index: number) {
     try {
       const novo_detalhe = { detalhes: textos[index] };
-      console.log(novo_detalhe);
       const response = await fetch(
         `${url_api}/perfilCarrinho?nameTag=${usuario_logado}&id=${index + 1}`,
         {

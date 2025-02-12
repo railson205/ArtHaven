@@ -31,7 +31,7 @@ export default function ListaItensMercado() {
             imagem: `${url_api}/${itemLista.foto}`,
             tipos_de_cor: itemLista.tiposCor,
             tipos_de_fundo: itemLista.tiposFundo,
-            id_perfil: itemLista.perfil,
+            perfilComprador: itemLista.id_Perfil,
           })
         );
 

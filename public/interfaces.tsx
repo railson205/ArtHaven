@@ -60,3 +60,10 @@ export interface ProdutoHistorico {
     cupom: number;
   };
 }
+
+export interface ListaMidias {
+  id_midia: number;
+  imagem: string;
+  data_postagem: string;
+  id_perfil: number;
+}

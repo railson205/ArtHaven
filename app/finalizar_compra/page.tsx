@@ -6,6 +6,8 @@ import {
   calcularTotal,
   cod_cupom as cod_cupom_valido,
   transformaValor,
+  url_api,
+  usuario_logado,
 } from "@/public/constantes";
 import { ProdutoCarrinhoInterface } from "@/public/interfaces";
 import { CreditCard } from "lucide-react";
@@ -35,22 +37,38 @@ export default function FinalizarCompra() {
     } else setMensagem("Código do cupom inválido!");
   };
 
-  const handleFinalizarCompra = () => {
-    const lista: any[] = [];
-    carrinho.map((item) => {
-      const post = {
-        id_perfil_comprador: item.id_perfil_comprador,
-        metodo_pagamento: { tipo: metodoPagamento, final: numerosFinais },
-        id_item_mercado: item.id_item_mercado,
-        detalhes: item.detalhes,
-        tipo_cor: item.adicionalCor,
-        tipo_fundo: item.adicionalPlanoDeFundo,
-        particao: valorParticao,
-        cupom: valorCupom,
-      };
-      lista.push(post);
-    });
-    console.log(lista);
+  const handleFinalizarCompra = async () => {
+    try {
+      const bodyPost: any[] = [];
+      carrinho.map((item) => {
+        const post = {
+          id_perfil_comprador: item.id_perfil_comprador,
+          metodo_pagamento: { tipo: metodoPagamento, final: numerosFinais },
+          id_item_mercado: item.id_item_mercado,
+          detalhes: item.detalhes,
+          tipo_cor: item.adicionalCor,
+          tipo_fundo: item.adicionalPlanoDeFundo,
+          particao: valorParticao,
+          cupom: valorCupom,
+        };
+        bodyPost.push(post);
+      });
+      const resp = await fetch(
+        `${url_api}/perfilCompras?nameTag=${usuario_logado}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyPost),
+        }
+      );
+
+      if (!resp.ok) throw new Error("Erro ao finalizar compra");
+
+      const data = await resp.json();
+      console.log("Produto criado:", data);
+    } catch (error) {
+      console.error("Erro na requisição POST:", error);
+    }
   };
 
   useEffect(() => {
@@ -227,12 +245,14 @@ export default function FinalizarCompra() {
                 <p className="text-2xl font-semibold">
                   Total: {transformaValor(total - valorDesconto)}
                 </p>
-                <button
-                  onClick={handleFinalizarCompra}
-                  className="bg-blue-700 text-white px-6 py-2 rounded-md hover:bg-blue-800 transition"
-                >
-                  Pagar
-                </button>
+                <Link href={"/"}>
+                  <button
+                    onClick={handleFinalizarCompra}
+                    className="bg-blue-700 text-white px-6 py-2 rounded-md hover:bg-blue-800 transition"
+                  >
+                    Pagar
+                  </button>
+                </Link>
               </div>
             </div>
           </div>

@@ -4,9 +4,11 @@ import { Botao_historico } from "@/public/components/botoes_historico";
 import Header from "@/public/components/headerbar";
 import ModalDenuncia from "@/public/components/modal_denuncia";
 import {
+  formatarData,
   icons_pagamento,
   itensSalvosMercado,
   produtos_historico as produtos_historico_salvos,
+  removerAcentosEConverterMinusculas,
   transformaValor,
   url_api,
   usuario_logado,
@@ -52,7 +54,7 @@ export default function HistoricoCompras() {
       );
       setProdutoHistorico([...itensHistorico]);
     } catch (error) {
-      console.log("Erro na requisição dos itens do historico", error);
+      console.error("Erro na requisição dos itens do historico", error);
     }
   }
 
@@ -132,8 +134,8 @@ export default function HistoricoCompras() {
                 }}
               >
                 <div>
-                  <p>Data do pedido: {produto.data_pedido}</p>
-                  <p>Data de entrega: {produto.data_entrega}</p>
+                  <p>Data do pedido: {formatarData(produto.data_pedido)}</p>
+                  <p>Data de entrega: {formatarData(produto.data_entrega)}</p>
                 </div>
                 <p style={{ wordWrap: "break-word", whiteSpace: "normal" }}>
                   Nome do artista: {produto.nome_artista}
@@ -194,14 +196,18 @@ export default function HistoricoCompras() {
                       }}
                     >
                       {icons_pagamento[
-                        produto.metodo_pagamento.tipo.toLowerCase() as keyof typeof icons_pagamento
+                        removerAcentosEConverterMinusculas(
+                          produto.metodo_pagamento.tipo
+                        ) as keyof typeof icons_pagamento
                       ] || <span>Ícone não disponível</span>}
                       <div>
                         <p style={{ marginLeft: 5 }}>
                           {produto.metodo_pagamento.tipo}
                         </p>
-                        {["débito", "crédito"].includes(
-                          produto.metodo_pagamento.tipo.toLowerCase()
+                        {["debito", "credito"].includes(
+                          removerAcentosEConverterMinusculas(
+                            produto.metodo_pagamento.tipo
+                          )
                         ) && (
                           <p style={{ marginLeft: 5 }}>
                             Final: {produto.metodo_pagamento.final}

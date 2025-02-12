@@ -2,6 +2,7 @@ import { CreditCard, ReceiptText } from "lucide-react";
 import RedeSocial from "./components/redes_sociais";
 import {
   ItensMercadoInterface,
+  ListaMidias,
   PerfilInterface,
   ProdutoCarrinhoInterface,
   ProdutoHistorico,
@@ -166,11 +167,55 @@ export const telas = {
   "Histórico de Compras": "/historico",
 };
 
+export const imagens_salvas: ListaMidias[] = [
+  {
+    id_midia: 1,
+    imagem: "/assets/lista-midias/imagem_10.jpg",
+    data_postagem: "2025-02-12",
+    id_perfil: 1,
+  },
+  {
+    id_midia: 2,
+    imagem: "/assets/lista-midias/imagem_9.jpg",
+    data_postagem: "2025-02-12",
+    id_perfil: 1,
+  },
+  {
+    id_midia: 3,
+    imagem: "/assets/lista-midias/imagem_8.jpg",
+    data_postagem: "2025-02-12",
+    id_perfil: 1,
+  },
+  {
+    id_midia: 4,
+    imagem: "/assets/lista-midias/imagem_7.jpeg",
+    data_postagem: "2025-02-12",
+    id_perfil: 1,
+  },
+  {
+    id_midia: 5,
+    imagem: "/assets/lista-midias/imagem_6.jpg",
+    data_postagem: "2025-02-12",
+    id_perfil: 1,
+  },
+  {
+    id_midia: 6,
+    imagem: "/assets/lista-midias/imagem_5.png",
+    data_postagem: "2025-02-12",
+    id_perfil: 1,
+  },
+  {
+    id_midia: 7,
+    imagem: "/assets/lista-midias/foto_perfil.png",
+    data_postagem: "2025-02-12",
+    id_perfil: 1,
+  },
+];
 const tamanho_icons = 50;
 
 export const icons_pagamento: Record<string, ReactNode> = {
-  crédito: <CreditCard size={tamanho_icons} />,
-  débito: <CreditCard size={tamanho_icons} />,
+  credito: <CreditCard size={tamanho_icons} />,
+  debito: <CreditCard size={tamanho_icons} />,
   boleto: <ReceiptText size={tamanho_icons} />,
   pix: <FaPix size={tamanho_icons} />,
   paypal: <FaCcPaypal size={tamanho_icons} />,
@@ -214,7 +259,6 @@ export const coleta_rede_social = (site: string, link: string, key: number) => {
     ([key]) => key.toLowerCase() === site.toLowerCase()
   );
   const { imagem = "", nome_imagem = "" } = entry ? entry[1] : {};
-  console.log();
   const tag = link
     .split("/")
     .filter(
@@ -242,21 +286,15 @@ export const calcularTotal = (carrinho: ProdutoCarrinhoInterface[]): number => {
   }, 0);
 };
 
-const b = [
-  {
-    tipo: "FullBody",
-    preco: 175,
-    adicionais: [
-      { nome: "Chapada", valor: 65 },
-      { nome: "Com Fundo", valor: 50 },
-    ],
-  },
-  {
-    tipo: "HeadShot",
-    preco: 50,
-    adicionais: [
-      { nome: "Preto e Branco", valor: 50 },
-      { nome: "Sem Fundo", valor: 0 },
-    ],
-  },
-];
+export function removerAcentosEConverterMinusculas(texto: string) {
+  return texto
+    .toLowerCase() // Converte para minúsculas
+    .normalize("NFD") // Decompõe caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, ""); // Remove os diacríticos (acentos)
+}
+
+export function formatarData(data: string) {
+  if (data == "") return "";
+  const [ano, mes, dia] = data.split("-"); // Divide a string nos "-"
+  return `${dia}/${mes}/${ano}`; // Reorganiza no formato desejado
+}

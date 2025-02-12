@@ -51,33 +51,8 @@ export default function Perfil() {
     }
   };
 
-  const fetchMidias = async () => {
-    try {
-      const response = await fetch(
-        `${url_api}/perfilMidia?nameTag=${usuario_logado}`
-      );
-      const text = await response.text();
-      const data = JSON.parse(text);
-
-      if (data?.Midia?.length > 0) {
-        const midiasPerfil = data.Midia.map((itemLista: any) => {
-          return {
-            id_midia: itemLista.id_Midia,
-            imagem: `${url_api}${itemLista.foto}`,
-            data_postagem: itemLista.dataPostagem || "",
-            id_perfil: itemLista.id_Perfil,
-          };
-        });
-        console.log(midiasPerfil);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar perfil:", error);
-    }
-  };
-
   useEffect(() => {
     fetchPerfil();
-    fetchMidias();
   }, []);
 
   const renderComponent = () => {
